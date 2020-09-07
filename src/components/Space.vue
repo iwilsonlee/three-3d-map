@@ -17,7 +17,7 @@ import * as GEOLIB from 'geolib'
 
 // const api = 'https://gistcdn.githack.com/isjeffcom/a611e99aa888534f67cc2f6273a8d594/raw/9dbb086197c344c860217826c59d8a70d33dcb54/gistfile1.txt'
 // const api = '/static/export.txt'
-const api = '/static/daxie0907.geojson'
+const api = '/static/daxie09072.geojson'
 
 export default {
   name: 'space',
@@ -138,6 +138,8 @@ export default {
       this.Update()
 
       this.GetGeoJson()
+
+      this.addPoint()
     },
     Update () {
       requestAnimationFrame(this.Update)
@@ -305,6 +307,24 @@ export default {
 
       return animatedLine
     },
+    addPoint () {
+      // const el = this.GPSRelativePosition([121.932619, 29.936184], this.center)
+      const el = this.GPSRelativePosition([121.936856, 29.933236], this.center, 'gaode')
+      // const el = this.GPSRelativePosition([121.945631, 29.941282], this.center, 'baidu')
+      // console.log('el====', JSON.stringify(el))
+      const starPoint = new THREE.Vector3(el[0], 0, el[1])
+      const starsGeometry = new THREE.Geometry()
+      starsGeometry.vertices.push(starPoint)
+      starsGeometry.rotateZ(Math.PI)
+
+      const sprite = new THREE.TextureLoader().load('/static/disc.png')
+
+      // 设置材质的颜色
+      const starsMaterial = new THREE.PointsMaterial({ size: 20, sizeAttenuation: false, map: sprite, alphaTest: 0.5, transparent: true })
+      starsMaterial.color.setHex('0xf30838')
+      const starField = new THREE.Points(starsGeometry, starsMaterial)
+      this.scene.add(starField)
+    },
     UpdateAniLines () {
       // If no animated line than do nothing
       if (this.iR_Line.children.length <= 0) return
@@ -379,7 +399,20 @@ export default {
       }
     },
 
-    GPSRelativePosition (objPosi, centerPosi) {
+    GPSRelativePosition (objPosi, centerPosi, from) {
+      if (from) {
+        // baidu 121.94317, 29.939874
+        // gaode 121.936647,29.93345
+        // openstreet 121.93261, 29.93619
+        if (from === 'baidu') {
+          objPosi[0] = objPosi[0] - 0.01056
+          objPosi[1] = objPosi[1] - 0.003684
+        } else if (from === 'gaode') {
+          objPosi[0] = objPosi[0] - 0.004042
+          objPosi[1] = objPosi[1] + 0.002731
+          // console.log('gaode===', JSON.stringify(objPosi))
+        }
+      }
       // Get GPS distance
       let dis = GEOLIB.getDistance(objPosi, centerPosi)
 
@@ -401,7 +434,8 @@ export default {
 
 <!-- Add "scoped" attribute to limit CSS to this component only -->
 <style scoped>
-h1, h2 {
+h1,
+h2 {
   font-weight: normal;
 }
 ul {
